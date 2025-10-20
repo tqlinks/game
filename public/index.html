@@ -45,27 +45,29 @@
         }
 
         /* Styles cho MÀN HÌNH CHỜ (LOBBY) */
-        #lobby {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
+        <div id="auth-container">
+    <h2>Xác thực</h2>
+    <input type="text" id="auth-username" placeholder="Tên đăng nhập" maxlength="15">
+    <input type="password" id="auth-password" placeholder="Mật khẩu" maxlength="15">
+    
+    <div style="margin-top: 15px;">
+        <button id="login-button">Đăng Nhập</button>
+        <button id="signup-button">Đăng Ký</button>
+    </div>
+    <p id="auth-message" style="color: red; margin-top: 10px;"></p>
+</div>
 
-        #lobby h2 {
-            color: #333;
-            margin-bottom: 20px;
-        }
+<div id="lobby-container" style="display: none;">
+    <h2>Tìm Phòng Chơi</h2>
+    <p id="logged-in-user">Chào mừng, [Username]!</p>
+    <input type="text" id="room-input" placeholder="Nhập tên phòng" value="CaroRoom1">
+    <button id="join-button">Tham Gia Phòng</button>
+    <button id="logout-button">Đăng Xuất</button>
+    <p id="lobby-message" style="color: red; margin-top: 10px;"></p>
+</div>
 
-        #lobby input {
-            padding: 10px;
-            margin: 8px 0;
-            width: 90%;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
+<div id="game-container" style="display: none;">
+    </div>
 
         #join-button {
             background-color: #4285f4;
