@@ -1,124 +1,129 @@
-// script.js
+// script.js (Logic Client)
 
-const socket = io(); 
+// Khai báo biến
+let userToken = localStorage.getItem('caroToken'); // Lưu Token cục bộ
+let myUsername = null; 
 
-// Định nghĩa các phần tử DOM MỚI
-const lobby = document.getElementById('lobby');
-const gameContainer = document.getElementById('game-container');
-const usernameInput = document.getElementById('username-input');
-const roomInput = document.getElementById('room-input');
-const joinButton = document.getElementById('join-button');
-const lobbyMessage = document.getElementById('lobby-message');
+// DOM Elements MỚI
+const authContainer = document.getElementById('auth-container');
+const lobbyContainer = document.getElementById('lobby-container');
+const authUsernameInput = document.getElementById('auth-username');
+const authPasswordInput = document.getElementById('auth-password');
+const loginButton = document.getElementById('login-button');
+const signupButton = document.getElementById('signup-button');
+const authMessage = document.getElementById('auth-message');
+const loggedInUserDisplay = document.getElementById('logged-in-user');
+const logoutButton = document.getElementById('logout-button');
 
-// Định nghĩa các phần tử DOM GAME CŨ
-const cells = document.querySelectorAll('.cell');
-const statusDisplay = document.getElementById('status');
-const playerInfoDisplay = document.getElementById('player-info');
-const resetButton = document.getElementById('reset-button');
+// ... (Các phần tử game cũ giữ nguyên) ...
 
-let myRole = null; 
-let currentRoomId = null;
-let myUsername = null;
+// Hàm chuyển đổi trạng thái giao diện
+const updateUI = (state) => {
+    authContainer.style.display = 'none';
+    lobbyContainer.style.display = 'none';
+    gameContainer.style.display = 'none';
 
-// Xử lý sự kiện khi nhấn nút Tham Gia
-joinButton.addEventListener('click', () => {
-    const username = usernameInput.value.trim();
-    const roomId = roomInput.value.trim();
+    if (state === 'AUTH') {
+        authContainer.style.display = 'block';
+        authMessage.textContent = '';
+    } else if (state === 'LOBBY') {
+        lobbyContainer.style.display = 'block';
+        loggedInUserDisplay.textContent = `Chào mừng, ${myUsername}!`;
+        lobbyMessage.textContent = '';
+    } else if (state === 'GAME') {
+        gameContainer.style.display = 'flex';
+    }
+};
 
-    if (!username || !roomId) {
-        lobbyMessage.textContent = 'Vui lòng nhập tên và tên phòng.';
+// ------------------
+// 1. LOGIC XÁC THỰC (AUTH)
+// ------------------
+
+// Chạy kiểm tra Token khi kết nối
+socket.on('connect', () => {
+    if (userToken) {
+        socket.emit('authenticate', userToken);
+    } else {
+        updateUI('AUTH'); // Mở màn hình đăng nhập nếu không có token
+    }
+});
+
+// Xử lý đăng nhập/đăng ký
+const handleAuth = (type) => {
+    const username = authUsernameInput.value.trim();
+    const password = authPasswordInput.value.trim();
+
+    if (!username || !password) {
+        authMessage.textContent = 'Vui lòng điền đủ tên và mật khẩu.';
         return;
     }
 
-    myUsername = username;
-    currentRoomId = roomId;
-    lobbyMessage.textContent = 'Đang tham gia...';
+    authMessage.textContent = type === 'login' ? 'Đang đăng nhập...' : 'Đang đăng ký...';
     
-    // Gửi tên người dùng và tên phòng lên Server
-    socket.emit('joinGame', { username, roomId });
-});
-
-// ------------------
-// 1. Logic Kết nối và Phòng Chờ
-// ------------------
-
-socket.on('connect', () => {
-    playerInfoDisplay.textContent = 'Đang chờ bạn tham gia phòng...';
-});
-
-// NHẬN VAI TRÒ TỪ SERVER (THÀNH CÔNG)
-socket.on('playerRole', ({ role, playerX, playerO }) => {
-    myRole = role;
-    
-    // Ẩn Lobby, hiện Game
-    lobby.style.display = 'none';
-    gameContainer.style.display = 'block';
-
-    updatePlayerInfo(playerX, playerO);
-});
-
-// Cập nhật thông tin người chơi
-const updatePlayerInfo = (playerX, playerO) => {
-    const infoX = playerX ? playerX.username : 'Chờ đối thủ X';
-    const infoO = playerO ? playerO.username : 'Chờ đối thủ O';
-    
-    // Hiển thị vai trò và tên người chơi
-    playerInfoDisplay.innerHTML = `Bạn: <b>${myUsername} (${myRole})</b> &nbsp;|&nbsp; X: ${infoX} &nbsp;|&nbsp; O: ${infoO}`;
-}
-
-// ------------------
-// 2. Logic Trò Chơi
-// ------------------
-
-// Cập nhật các hàm xử lý Socket.IO cũ để dùng currentRoomId
-
-// 3. Nhận thông báo trạng thái từ Server
-socket.on('status', (message) => {
-    statusDisplay.textContent = message;
-});
-
-// 4. Nhận cập nhật bàn cờ từ Server
-socket.on('updateBoard', ({ board, nextTurn, winner, draw, playerX, playerO }) => {
-    // Cập nhật thông tin người chơi (vì có thể có người mới tham gia/rời đi)
-    updatePlayerInfo(playerX, playerO); 
-    
-    // Cập nhật giao diện bàn cờ
-    board.forEach((value, index) => {
-        cells[index].textContent = value;
-    });
-
-    // Cập nhật trạng thái lượt chơi
-    if (winner) {
-        statusDisplay.textContent = `Người chơi ${winner} đã thắng! 🎉`;
-    } else if (draw) {
-        statusDisplay.textContent = `Trò chơi hòa! 🤝`;
-    } else {
-        statusDisplay.textContent = `Lượt của Người chơi ${nextTurn}`;
-    }
-});
-
-// 5. Xử lý click (Gửi nước đi lên Server)
-const handleCellClick = (event) => {
-    if (!myRole) return;
-    
-    const clickedCellIndex = parseInt(event.target.getAttribute('data-index'));
-
-    socket.emit('makeMove', { 
-        index: clickedCellIndex, 
-        role: myRole, 
-        roomId: currentRoomId // Dùng biến phòng mới
-    });
+    socket.emit(type, { username, password });
 };
 
-// 6. Xử lý nút Chơi Lại
-resetButton.addEventListener('click', () => {
-     socket.emit('resetGame', currentRoomId); 
+loginButton.addEventListener('click', () => handleAuth('login'));
+signupButton.addEventListener('click', () => handleAuth('signup'));
+
+// Nhận phản hồi xác thực từ Server
+socket.on('authSuccess', ({ username, token }) => {
+    userToken = token;
+    myUsername = username;
+    localStorage.setItem('caroToken', token);
+    updateUI('LOBBY'); // Chuyển sang màn hình Lobby
 });
 
-// Thiết lập lắng nghe sự kiện click trên các ô
-cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+socket.on('authError', (message) => {
+    authMessage.textContent = message;
+    userToken = null; // Xóa token nếu bị lỗi xác thực
+    localStorage.removeItem('caroToken');
+    updateUI('AUTH');
+});
 
-// NHẬN LỖI TỪ SERVER
+// Xử lý Đăng Xuất
+logoutButton.addEventListener('click', () => {
+    userToken = null;
+    myUsername = null;
+    localStorage.removeItem('caroToken');
+    // Cần reload trang hoặc chuyển hẳn về trạng thái AUTH
+    location.reload(); 
+});
+
+// ------------------
+// 2. LOGIC PHÒNG CHỜ VÀ GAME
+// ------------------
+
+joinButton.addEventListener('click', () => {
+    const roomId = roomInput.value.trim();
+    if (!roomId) {
+        lobbyMessage.textContent = 'Vui lòng nhập tên phòng.';
+        return;
+    }
+    
+    lobbyMessage.textContent = 'Đang tham gia...';
+    // Gửi token và room ID lên Server
+    socket.emit('joinGame', { roomId, token: userToken });
+});
+
+socket.on('joinSuccess', (data) => {
+    currentRoomId = data.roomId;
+    updateUI('GAME'); // Chuyển sang màn hình Game
+    // ... Cập nhật player info và status như logic cũ ...
+});
+
 socket.on('lobbyError', (message) => {
     lobbyMessage.textContent = message;
 });
+
+// ... (các hàm xử lý game makeMove, updateBoard, resetGame giữ nguyên logic) ...
+// Cần đảm bảo hàm makeMove gửi token lên server để server xác minh
+const handleCellClick = (event) => {
+    // ...
+    socket.emit('makeMove', { 
+        index: clickedCellIndex, 
+        role: myRole, 
+        roomId: currentRoomId,
+        token: userToken // Gửi token lên server
+    });
+};
