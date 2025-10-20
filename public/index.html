@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cờ Caro Online - Auth & Lobby</title>
+    <title>Cờ Caro Online - Hoàn chỉnh</title>
 
     <style>
         :root {
@@ -59,15 +59,15 @@
         }
 
         #login-button, #join-button {
-            background-color: #4285f4; /* Xanh Google */
+            background-color: #4285f4; 
             color: white;
         }
         #signup-button {
-            background-color: #34a853; /* Xanh lá Google */
+            background-color: #34a853; 
             color: white;
         }
         #logout-button, #reset-button {
-            background-color: #ea4335; /* Đỏ Google */
+            background-color: #ea4335; 
             color: white;
         }
 
@@ -75,7 +75,7 @@
         #signup-button:hover { background-color: #2e8b46; }
         #logout-button:hover, #reset-button:hover { background-color: #c53929; }
 
-        /* Game Board Styles (Giữ nguyên) */
+        /* Game Board Styles */
         #player-info {
             margin-bottom: 15px;
             font-size: 1.1em;
@@ -274,8 +274,7 @@
             localStorage.removeItem('caroToken');
             myRole = null;
             currentRoomId = null;
-            // Đặt lại giao diện về trạng thái AUTH
-            updateUI('AUTH'); 
+            location.reload(); // Cách đơn giản nhất để reset trạng thái
         });
 
         // ------------------
@@ -298,7 +297,7 @@
         socket.on('joinSuccess', ({ roomId, role, playerX, playerO }) => {
             currentRoomId = roomId;
             myRole = role;
-            updateUI('GAME'); // Chuyển sang màn hình Game
+            updateUI('GAME'); 
             updatePlayerInfo(playerX, playerO);
             statusDisplay.textContent = 'Đã vào phòng. Vui lòng chờ đối thủ.';
         });
@@ -320,7 +319,6 @@
 
             // Cập nhật trạng thái lượt chơi
             if (winner) {
-                // Giả định Server gửi username hoặc Client tự tìm
                 const winnerUsername = winner === 'X' && playerX ? playerX.username : (winner === 'O' && playerO ? playerO.username : winner);
                 statusDisplay.textContent = `Người chơi ${winnerUsername} đã thắng! 🎉`;
             } else if (draw) {
@@ -332,7 +330,6 @@
         
         // Xử lý click (Gửi nước đi lên Server)
         const handleCellClick = (event) => {
-            // Kiểm tra: đã có vai trò, tên phòng và token chưa
             if (!myRole || !currentRoomId || !userToken) return; 
             
             const clickedCellIndex = parseInt(event.target.getAttribute('data-index'));
@@ -341,7 +338,7 @@
                 index: clickedCellIndex, 
                 role: myRole, 
                 roomId: currentRoomId,
-                token: userToken // Gửi token lên server để xác minh
+                token: userToken 
             });
         };
 
