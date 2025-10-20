@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cờ Caro Online (5x5) - Phòng Chờ</title>
+    <title>Cờ Caro Online - Auth & Lobby</title>
 
     <style>
         :root {
@@ -20,72 +20,62 @@
             background-color: #e8f0f8;
             color: #333;
         }
-        <h1>Game Cờ Caro Online (5x5)</h1>
-    
-    <div id="lobby">
-        <h2>Tham gia Phòng Chơi</h2>
-        <input type="text" id="username-input" placeholder="Nhập tên của bạn" maxlength="15">
-        <input type="text" id="room-input" placeholder="Nhập tên phòng (ví dụ: Caro1)" value="CaroRoom1">
-        <button id="join-button">Tham Gia</button>
-        <p id="lobby-message" style="color: red;"></p>
-    </div>
 
-    <div id="game-container" style="display: none;"> 
-        <div id="player-info">Đang chờ đối thủ...</div>
-        <div id="status"></div>
-        
-        <div id="board">
-            </div>
-
-        <button id="reset-button">Chơi Lại</button>
-    </div>
         h1 {
             color: #1a73e8;
             margin-bottom: 30px;
         }
 
-        /* Styles cho MÀN HÌNH CHỜ (LOBBY) */
-        <div id="auth-container">
-    <h2>Xác thực</h2>
-    <input type="text" id="auth-username" placeholder="Tên đăng nhập" maxlength="15">
-    <input type="password" id="auth-password" placeholder="Mật khẩu" maxlength="15">
-    
-    <div style="margin-top: 15px;">
-        <button id="login-button">Đăng Nhập</button>
-        <button id="signup-button">Đăng Ký</button>
-    </div>
-    <p id="auth-message" style="color: red; margin-top: 10px;"></p>
-</div>
+        /* Styles chung cho các khối chức năng */
+        #auth-container, #lobby-container, #game-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
 
-<div id="lobby-container" style="display: none;">
-    <h2>Tìm Phòng Chơi</h2>
-    <p id="logged-in-user">Chào mừng, [Username]!</p>
-    <input type="text" id="room-input" placeholder="Nhập tên phòng" value="CaroRoom1">
-    <button id="join-button">Tham Gia Phòng</button>
-    <button id="logout-button">Đăng Xuất</button>
-    <p id="lobby-message" style="color: red; margin-top: 10px;"></p>
-</div>
+        /* Styles cho các Input và Button */
+        input[type="text"], input[type="password"] {
+            padding: 10px;
+            margin: 8px 0;
+            width: 90%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
 
-<div id="game-container" style="display: none;">
-    </div>
-
-        #join-button {
-            background-color: #4285f4;
-            color: white;
-            padding: 12px 25px;
+        button {
+            padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 1em;
-            margin-top: 15px;
+            margin: 5px;
             transition: background-color 0.3s;
         }
 
-        #join-button:hover {
-            background-color: #3367d6;
+        #login-button, #join-button {
+            background-color: #4285f4; /* Xanh Google */
+            color: white;
+        }
+        #signup-button {
+            background-color: #34a853; /* Xanh lá Google */
+            color: white;
+        }
+        #logout-button, #reset-button {
+            background-color: #ea4335; /* Đỏ Google */
+            color: white;
         }
 
-        /* Styles cho GAME */
+        #login-button:hover, #join-button:hover { background-color: #3367d6; }
+        #signup-button:hover { background-color: #2e8b46; }
+        #logout-button:hover, #reset-button:hover { background-color: #c53929; }
+
+        /* Game Board Styles (Giữ nguyên) */
         #player-info {
             margin-bottom: 15px;
             font-size: 1.1em;
@@ -129,42 +119,41 @@
             background-color: #f0f0f0;
         }
 
-        /* Loại bỏ viền cho lưới N x N */
+        /* Loại bỏ viền cho lưới 5x5 */
         .cell:nth-child(5n) { border-right: none; }
         .cell:nth-child(n+21) { border-bottom: none; }
         .cell:nth-child(5n+1) { border-left: none; }
         .cell:nth-child(-n+5) { border-top: none; }
-
-        #reset-button {
-            margin-top: 30px;
-            padding: 10px 20px;
-            font-size: 1em;
-            cursor: pointer;
-            background-color: #00897b;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        #reset-button:hover {
-            background-color: #00695c;
-        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <h1>Game Cờ Caro Online (5x5)</h1>
     
-    <div id="lobby">
-        <h2>Tham gia Phòng Chơi</h2>
-        <input type="text" id="username-input" placeholder="Nhập tên của bạn" maxlength="15">
-        <input type="text" id="room-input" placeholder="Nhập tên phòng (ví dụ: Caro1)" value="CaroRoom1">
-        <button id="join-button">Tham Gia</button>
-        <p id="lobby-message" style="color: red; margin-top: 10px;"></p>
+    <div id="auth-container" style="display: none;">
+        <h2>Đăng Nhập / Đăng Ký</h2>
+        <input type="text" id="auth-username" placeholder="Tên đăng nhập" maxlength="15">
+        <input type="password" id="auth-password" placeholder="Mật khẩu" maxlength="15">
+        
+        <div style="margin-top: 15px;">
+            <button id="login-button">Đăng Nhập</button>
+            <button id="signup-button">Đăng Ký</button>
+        </div>
+        <p id="auth-message" style="color: red; margin-top: 10px; min-height: 1.2em;"></p>
     </div>
 
-    <div id="game-container" style="display: none;"> 
+    <div id="lobby-container" style="display: none;">
+        <h2>Tìm Phòng Chơi</h2>
+        <p id="logged-in-user" style="font-weight: bold; color: #4285f4;"></p>
+        <input type="text" id="room-input" placeholder="Nhập tên phòng" value="CaroRoom1">
+        <div style="margin-top: 15px;">
+            <button id="join-button">Tham Gia Phòng</button>
+            <button id="logout-button">Đăng Xuất</button>
+        </div>
+        <p id="lobby-message" style="color: red; margin-top: 10px; min-height: 1.2em;"></p>
+    </div>
+
+    <div id="game-container" style="display: none; flex-direction: column; align-items: center;"> 
         <div id="player-info"></div>
         <div id="status"></div>
         
@@ -182,10 +171,22 @@
     <script>
         const socket = io(); 
 
+        // Khai báo biến trạng thái
+        let userToken = localStorage.getItem('caroToken'); // Lấy Token nếu có
+        let myRole = null; 
+        let currentRoomId = null;
+        let myUsername = null; 
+
         // DOM elements
-        const lobby = document.getElementById('lobby');
-        const gameContainer = document.getElementById('game-container');
-        const usernameInput = document.getElementById('username-input');
+        const authContainer = document.getElementById('auth-container');
+        const lobbyContainer = document.getElementById('lobby-container');
+        const authUsernameInput = document.getElementById('auth-username');
+        const authPasswordInput = document.getElementById('auth-password');
+        const loginButton = document.getElementById('login-button');
+        const signupButton = document.getElementById('signup-button');
+        const authMessage = document.getElementById('auth-message');
+        const loggedInUserDisplay = document.getElementById('logged-in-user');
+        const logoutButton = document.getElementById('logout-button');
         const roomInput = document.getElementById('room-input');
         const joinButton = document.getElementById('join-button');
         const lobbyMessage = document.getElementById('lobby-message');
@@ -194,58 +195,120 @@
         const playerInfoDisplay = document.getElementById('player-info');
         const resetButton = document.getElementById('reset-button');
 
-        let myRole = null; 
-        let currentRoomId = null;
-        let myUsername = null;
+        // Hàm chuyển đổi trạng thái giao diện
+        const updateUI = (state) => {
+            authContainer.style.display = 'none';
+            lobbyContainer.style.display = 'none';
+            gameContainer.style.display = 'none';
 
-        // Xử lý sự kiện khi nhấn nút Tham Gia
-        joinButton.addEventListener('click', () => {
-            const username = usernameInput.value.trim();
-            const roomId = roomInput.value.trim();
-
-            if (!username || !roomId) {
-                lobbyMessage.textContent = 'Vui lòng nhập tên và tên phòng.';
-                return;
+            if (state === 'AUTH') {
+                authContainer.style.display = 'block';
+                authMessage.textContent = '';
+            } else if (state === 'LOBBY') {
+                lobbyContainer.style.display = 'block';
+                loggedInUserDisplay.innerHTML = `Chào mừng, <b>${myUsername}</b>!`;
+                lobbyMessage.textContent = '';
+            } else if (state === 'GAME') {
+                gameContainer.style.display = 'flex';
             }
-
-            myUsername = username;
-            currentRoomId = roomId;
-            lobbyMessage.textContent = 'Đang tham gia...';
-            
-            // Gửi tên người dùng và tên phòng lên Server
-            socket.emit('joinGame', { username, roomId });
-        });
+        };
 
         // Hàm cập nhật thông tin người chơi
         const updatePlayerInfo = (playerX, playerO) => {
             const infoX = playerX ? playerX.username : 'Chờ đối thủ X';
             const infoO = playerO ? playerO.username : 'Chờ đối thủ O';
             
-            // Hiển thị vai trò và tên người chơi
             playerInfoDisplay.innerHTML = `Bạn: <b>${myUsername} (${myRole})</b> &nbsp;|&nbsp; X: ${infoX} &nbsp;|&nbsp; O: ${infoO}`;
         }
 
         // ------------------
-        // Xử lý Socket.IO Events
+        // 1. LOGIC XÁC THỰC (AUTH)
         // ------------------
 
-        // NHẬN VAI TRÒ TỪ SERVER (THÀNH CÔNG)
-        socket.on('playerRole', ({ role, playerX, playerO }) => {
+        socket.on('connect', () => {
+            if (userToken) {
+                // Nếu có Token, yêu cầu server xác thực lại
+                socket.emit('authenticate', userToken);
+            } else {
+                updateUI('AUTH'); // Mở màn hình đăng nhập nếu không có token
+            }
+        });
+        
+        // Xử lý đăng nhập/đăng ký
+        const handleAuth = (type) => {
+            const username = authUsernameInput.value.trim();
+            const password = authPasswordInput.value.trim();
+
+            if (!username || !password) {
+                authMessage.textContent = 'Vui lòng điền đủ tên và mật khẩu.';
+                return;
+            }
+
+            authMessage.textContent = type === 'login' ? 'Đang đăng nhập...' : 'Đang đăng ký...';
+            
+            socket.emit(type, { username, password });
+        };
+
+        loginButton.addEventListener('click', () => handleAuth('login'));
+        signupButton.addEventListener('click', () => handleAuth('signup'));
+
+        // Nhận phản hồi xác thực từ Server
+        socket.on('authSuccess', ({ username, token }) => {
+            userToken = token;
+            myUsername = username;
+            localStorage.setItem('caroToken', token);
+            updateUI('LOBBY'); // Chuyển sang màn hình Lobby
+        });
+
+        socket.on('authError', (message) => {
+            authMessage.textContent = message;
+            userToken = null; 
+            localStorage.removeItem('caroToken');
+            updateUI('AUTH');
+        });
+        
+        // Xử lý Đăng Xuất
+        logoutButton.addEventListener('click', () => {
+            userToken = null;
+            myUsername = null;
+            localStorage.removeItem('caroToken');
+            myRole = null;
+            currentRoomId = null;
+            // Đặt lại giao diện về trạng thái AUTH
+            updateUI('AUTH'); 
+        });
+
+        // ------------------
+        // 2. LOGIC PHÒNG CHỜ VÀ GAME
+        // ------------------
+
+        joinButton.addEventListener('click', () => {
+            const roomId = roomInput.value.trim();
+            if (!roomId) {
+                lobbyMessage.textContent = 'Vui lòng nhập tên phòng.';
+                return;
+            }
+            
+            lobbyMessage.textContent = 'Đang tham gia...';
+            // Gửi token, room ID và username lên Server để tham gia game
+            socket.emit('joinGame', { roomId, token: userToken, username: myUsername });
+        });
+
+        // Nhận tín hiệu tham gia phòng thành công
+        socket.on('joinSuccess', ({ roomId, role, playerX, playerO }) => {
+            currentRoomId = roomId;
             myRole = role;
-            
-            // Ẩn Lobby, hiện Game
-            lobby.style.display = 'none';
-            gameContainer.style.display = 'flex'; // Dùng flex để giữ layout
-            
+            updateUI('GAME'); // Chuyển sang màn hình Game
             updatePlayerInfo(playerX, playerO);
+            statusDisplay.textContent = 'Đã vào phòng. Vui lòng chờ đối thủ.';
         });
 
-        // Nhận thông báo trạng thái từ Server
-        socket.on('status', (message) => {
-            statusDisplay.textContent = message;
+        // Nhận lỗi từ Server (Lobby hoặc JoinGame)
+        socket.on('lobbyError', (message) => {
+            lobbyMessage.textContent = message;
         });
-
-        // Nhận cập nhật bàn cờ từ Server
+        
+        // 4. Nhận cập nhật bàn cờ từ Server
         socket.on('updateBoard', ({ board, nextTurn, winner, draw, playerX, playerO }) => {
             // Cập nhật thông tin người chơi 
             updatePlayerInfo(playerX, playerO); 
@@ -257,7 +320,9 @@
 
             // Cập nhật trạng thái lượt chơi
             if (winner) {
-                statusDisplay.textContent = `Người chơi ${winner} (${winner === 'X' ? playerX.username : playerO.username}) đã thắng! 🎉`;
+                // Giả định Server gửi username hoặc Client tự tìm
+                const winnerUsername = winner === 'X' && playerX ? playerX.username : (winner === 'O' && playerO ? playerO.username : winner);
+                statusDisplay.textContent = `Người chơi ${winnerUsername} đã thắng! 🎉`;
             } else if (draw) {
                 statusDisplay.textContent = `Trò chơi hòa! 🤝`;
             } else {
@@ -265,22 +330,18 @@
             }
         });
         
-        // NHẬN LỖI TỪ SERVER
-        socket.on('lobbyError', (message) => {
-            lobbyMessage.textContent = message;
-        });
-
         // Xử lý click (Gửi nước đi lên Server)
         const handleCellClick = (event) => {
-            // Kiểm tra: đã có vai trò, tên phòng chưa
-            if (!myRole || !currentRoomId) return; 
+            // Kiểm tra: đã có vai trò, tên phòng và token chưa
+            if (!myRole || !currentRoomId || !userToken) return; 
             
             const clickedCellIndex = parseInt(event.target.getAttribute('data-index'));
 
             socket.emit('makeMove', { 
                 index: clickedCellIndex, 
                 role: myRole, 
-                roomId: currentRoomId 
+                roomId: currentRoomId,
+                token: userToken // Gửi token lên server để xác minh
             });
         };
 
