@@ -1,129 +1,126 @@
-// script.js (Logic Client)
+const BOARD_SIZE = 15;
+const WIN_COUNT = 5;
+const board = [];
+let currentPlayer = 'X';
+let isGameOver = false;
 
-// Khai báo biến
-let userToken = localStorage.getItem('caroToken'); // Lưu Token cục bộ
-let myUsername = null; 
+const caroBoardElement = document.getElementById('caro-board');
+const currentPlayerElement = document.getElementById('current-player');
+const messageElement = document.getElementById('message');
 
-// DOM Elements MỚI
-const authContainer = document.getElementById('auth-container');
-const lobbyContainer = document.getElementById('lobby-container');
-const authUsernameInput = document.getElementById('auth-username');
-const authPasswordInput = document.getElementById('auth-password');
-const loginButton = document.getElementById('login-button');
-const signupButton = document.getElementById('signup-button');
-const authMessage = document.getElementById('auth-message');
-const loggedInUserDisplay = document.getElementById('logged-in-user');
-const logoutButton = document.getElementById('logout-button');
+/** Chuyển màn hình từ đăng nhập sang game */
+function startGameDemo() {
+    document.getElementById('auth-screen').classList.remove('active');
+    document.getElementById('game-screen').classList.add('active');
+    initGame();
+}
 
-// ... (Các phần tử game cũ giữ nguyên) ...
+/** Khởi tạo bàn cờ và logic game */
+function initGame() {
+    caroBoardElement.innerHTML = ''; // Xóa bàn cờ cũ
+    board.length = 0; // Xóa mảng logic cũ
+    isGameOver = false;
+    currentPlayer = 'X';
+    currentPlayerElement.textContent = 'X';
+    messageElement.textContent = '';
 
-// Hàm chuyển đổi trạng thái giao diện
-const updateUI = (state) => {
-    authContainer.style.display = 'none';
-    lobbyContainer.style.display = 'none';
-    gameContainer.style.display = 'none';
-
-    if (state === 'AUTH') {
-        authContainer.style.display = 'block';
-        authMessage.textContent = '';
-    } else if (state === 'LOBBY') {
-        lobbyContainer.style.display = 'block';
-        loggedInUserDisplay.textContent = `Chào mừng, ${myUsername}!`;
-        lobbyMessage.textContent = '';
-    } else if (state === 'GAME') {
-        gameContainer.style.display = 'flex';
+    // Tạo mảng 2 chiều đại diện cho bàn cờ và các ô HTML
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        board[i] = [];
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            board[i][j] = ''; // 'X' hoặc 'O'
+            
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.row = i;
+            cell.dataset.col = j;
+            cell.addEventListener('click', handleCellClick);
+            caroBoardElement.appendChild(cell);
+        }
     }
-};
+}
 
-// ------------------
-// 1. LOGIC XÁC THỰC (AUTH)
-// ------------------
+/** Xử lý khi người chơi click vào một ô */
+function handleCellClick(event) {
+    if (isGameOver) {
+        messageElement.textContent = "Ván đấu đã kết thúc. Nhấn 'Chơi lại'!";
+        return;
+    }
 
-// Chạy kiểm tra Token khi kết nối
-socket.on('connect', () => {
-    if (userToken) {
-        socket.emit('authenticate', userToken);
+    const row = parseInt(event.target.dataset.row);
+    const col = parseInt(event.target.dataset.col);
+
+    // Kiểm tra ô đã được đi chưa
+    if (board[row][col] !== '') {
+        return; 
+    }
+
+    // 1. Cập nhật logic
+    board[row][col] = currentPlayer;
+
+    // 2. Cập nhật giao diện
+    event.target.textContent = currentPlayer;
+    event.target.classList.add('occupied', currentPlayer);
+
+    // 3. Kiểm tra thắng
+    if (checkWin(row, col, currentPlayer)) {
+        messageElement.textContent = `Người chơi ${currentPlayer} ĐÃ THẮNG! 🎉`;
+        isGameOver = true;
     } else {
-        updateUI('AUTH'); // Mở màn hình đăng nhập nếu không có token
+        // 4. Chuyển lượt
+        currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
+        currentPlayerElement.textContent = currentPlayer;
     }
-});
+}
 
-// Xử lý đăng nhập/đăng ký
-const handleAuth = (type) => {
-    const username = authUsernameInput.value.trim();
-    const password = authPasswordInput.value.trim();
+/** Kiểm tra chiến thắng */
+function checkWin(r, c, player) {
+    // Định nghĩa 4 hướng kiểm tra (Ngang, Dọc, Chéo chính, Chéo phụ)
+    const directions = [
+        [0, 1],   // Ngang (col + 1)
+        [1, 0],   // Dọc (row + 1)
+        [1, 1],   // Chéo chính (row + 1, col + 1)
+        [1, -1]   // Chéo phụ (row + 1, col - 1)
+    ];
 
-    if (!username || !password) {
-        authMessage.textContent = 'Vui lòng điền đủ tên và mật khẩu.';
-        return;
+    for (const [dr, dc] of directions) {
+        let count = 1; // Tính cả quân vừa đánh
+        
+        // Kiểm tra về 1 phía
+        for (let i = 1; i < WIN_COUNT; i++) {
+            const newR = r + dr * i;
+            const newC = c + dc * i;
+            if (newR >= 0 && newR < BOARD_SIZE && newC >= 0 && newC < BOARD_SIZE && board[newR][newC] === player) {
+                count++;
+            } else {
+                break;
+            }
+        }
+
+        // Kiểm tra về phía đối diện
+        for (let i = 1; i < WIN_COUNT; i++) {
+            const newR = r - dr * i;
+            const newC = c - dc * i;
+            if (newR >= 0 && newR < BOARD_SIZE && newC >= 0 && newC < BOARD_SIZE && board[newR][newC] === player) {
+                count++;
+            } else {
+                break;
+            }
+        }
+
+        if (count >= WIN_COUNT) {
+            return true;
+        }
     }
+    return false;
+}
 
-    authMessage.textContent = type === 'login' ? 'Đang đăng nhập...' : 'Đang đăng ký...';
-    
-    socket.emit(type, { username, password });
-};
+/** Thiết lập lại trò chơi */
+function resetGame() {
+    initGame();
+}
 
-loginButton.addEventListener('click', () => handleAuth('login'));
-signupButton.addEventListener('click', () => handleAuth('signup'));
+// Khởi tạo bàn cờ lần đầu (khi vào màn hình game demo)
+// initGame(); // Bỏ comment nếu muốn hiển thị bàn cờ ngay khi load trang
 
-// Nhận phản hồi xác thực từ Server
-socket.on('authSuccess', ({ username, token }) => {
-    userToken = token;
-    myUsername = username;
-    localStorage.setItem('caroToken', token);
-    updateUI('LOBBY'); // Chuyển sang màn hình Lobby
-});
-
-socket.on('authError', (message) => {
-    authMessage.textContent = message;
-    userToken = null; // Xóa token nếu bị lỗi xác thực
-    localStorage.removeItem('caroToken');
-    updateUI('AUTH');
-});
-
-// Xử lý Đăng Xuất
-logoutButton.addEventListener('click', () => {
-    userToken = null;
-    myUsername = null;
-    localStorage.removeItem('caroToken');
-    // Cần reload trang hoặc chuyển hẳn về trạng thái AUTH
-    location.reload(); 
-});
-
-// ------------------
-// 2. LOGIC PHÒNG CHỜ VÀ GAME
-// ------------------
-
-joinButton.addEventListener('click', () => {
-    const roomId = roomInput.value.trim();
-    if (!roomId) {
-        lobbyMessage.textContent = 'Vui lòng nhập tên phòng.';
-        return;
-    }
-    
-    lobbyMessage.textContent = 'Đang tham gia...';
-    // Gửi token và room ID lên Server
-    socket.emit('joinGame', { roomId, token: userToken });
-});
-
-socket.on('joinSuccess', (data) => {
-    currentRoomId = data.roomId;
-    updateUI('GAME'); // Chuyển sang màn hình Game
-    // ... Cập nhật player info và status như logic cũ ...
-});
-
-socket.on('lobbyError', (message) => {
-    lobbyMessage.textContent = message;
-});
-
-// ... (các hàm xử lý game makeMove, updateBoard, resetGame giữ nguyên logic) ...
-// Cần đảm bảo hàm makeMove gửi token lên server để server xác minh
-const handleCellClick = (event) => {
-    // ...
-    socket.emit('makeMove', { 
-        index: clickedCellIndex, 
-        role: myRole, 
-        roomId: currentRoomId,
-        token: userToken // Gửi token lên server
-    });
-};
+// Lưu ý: Gọi startGameDemo() khi nhấn nút để bắt đầu game
