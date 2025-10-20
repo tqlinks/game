@@ -20,7 +20,25 @@
             background-color: #e8f0f8;
             color: #333;
         }
+        <h1>Game Cờ Caro Online (5x5)</h1>
+    
+    <div id="lobby">
+        <h2>Tham gia Phòng Chơi</h2>
+        <input type="text" id="username-input" placeholder="Nhập tên của bạn" maxlength="15">
+        <input type="text" id="room-input" placeholder="Nhập tên phòng (ví dụ: Caro1)" value="CaroRoom1">
+        <button id="join-button">Tham Gia</button>
+        <p id="lobby-message" style="color: red;"></p>
+    </div>
 
+    <div id="game-container" style="display: none;"> 
+        <div id="player-info">Đang chờ đối thủ...</div>
+        <div id="status"></div>
+        
+        <div id="board">
+            </div>
+
+        <button id="reset-button">Chơi Lại</button>
+    </div>
         h1 {
             color: #1a73e8;
             margin-bottom: 30px;
